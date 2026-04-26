@@ -1,4 +1,4 @@
-bucket                      = "Имя бакета"
+bucket                      = "task-future-2.0"
 key                         = "task2/terraform.tfstate"
 region                      = "ru-central1"
 endpoint                    = "https://storage.yandexcloud.net"
