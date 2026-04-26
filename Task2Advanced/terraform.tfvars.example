@@ -1,0 +1,22 @@
+# Данные для авторизации (можно взять из вывода команды yc config list)
+
+yc_token       = ""  # OAuth-токен
+yc_cloud_id    = ""  # ID облака
+yc_folder_id   = ""  # ID каталога
+
+vm_name = "vm_module_dev"
+cpu_count = 2
+ram_size = 2
+
+# Используем Ubuntu 22.04
+image_family = "ubuntu-2204-lts"
+
+subnet_id = "" # ID подсети
+assign_public_ip = true
+create_additional_disk = false
+
+labels = {
+  environment = "dev"
+  project     = "terraform-test"
+  os-family   = "ubuntu"
+}

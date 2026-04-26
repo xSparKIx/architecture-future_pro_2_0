@@ -1,0 +1,28 @@
+@startuml ''
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+Person(doctor, "Врач/Медперсонал", "Просмотр пациентов, использование AI-ассистента")
+Person(analyst, "Бизнес-аналитик", "Построение отчетов в Self-Service")
+Person(operator, "Операционный сотрудник", "Работа с финансами и документами")
+
+System_Boundary(future_platform, "Платформа Будущее 2.0") {
+    System(Vitrina, "Витрина данных (Self-Service Portal)", "Единая точка доступа к обезличенной аналитике по всем доменам")
+    System(MedServices, "Медицинские сервисы (Новый контур)", "Цифровая клиника, защищенный контур мед. данных")
+    System(FinTech, "ФинТех сервисы", "Банковские операции, кредиты, счета")
+    System(AI_Factory, "AI-фабрика", "ML-модели для диагностики и скоринга")
+}
+
+System_Ext(Pharma, "Партнеры-фармкомпании", "Поставка данных о лекарствах и побочных эффектах")
+System_Ext(Regulator, "Регуляторы (ЦБ, Минздрав)", "Обязательная отчетность")
+
+Rel(doctor, MedServices, "Ведет прием, загружает снимки", "HTTPS/gRPC")
+Rel(operator, FinTech, "Проводит платежи", "HTTPS")
+Rel(analyst, Vitrina, "SQL, Drag-and-Drop отчеты", "HTTPS")
+Rel(MedServices, Vitrina, "Поток агрегированных/обезличенных данных", "Stream (Kafka)")
+Rel(FinTech, Vitrina, "Финансовые показатели", "Stream (Kafka)")
+Rel(AI_Factory, MedServices, "Предоставляет предикты (ассистент врача)", "gRPC")
+Rel(Pharma, Vitrina, "API данных", "Batch/Stream")
+Rel(Vitrina, Regulator, "Автоматическая выгрузка отчетности", "SFTP/API")
+@enduml

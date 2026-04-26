@@ -1,0 +1,39 @@
+@startuml ''
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+LAYOUT_TOP_DOWN()
+
+title Bounded Contexts экосистемы «Будущее 2.0»
+
+' Основные доменные контексты
+System_Boundary(core, "Core Domains") {
+    System(Patients, "Patient Management", "Регистрация, ведение медкарт, согласия")
+    System(Clinical, "Clinical Services", "Приёмы, назначения, результаты исследований")
+    System(Finance, "Financial Services", "Счета, кредиты, биллинг")
+    System(AI, "AI Diagnostics", "Модели диагностики, предикты, телемедицина")
+    System(Pharma, "Pharma Partners", "Интеграция с фармкомпаниями, закупки")
+}
+
+System_Boundary(supporting, "Supporting & Generic") {
+    System(Identity, "Identity & Access", "Пользователи, роли, разрешения")
+    System(Reporting, "Reporting & BI", "Self-Service витрина, отчётность")
+    System(Notification, "Notification Hub", "Email, SMS, push-уведомления")
+}
+
+' Внешние системы
+System_Ext(Regulator, "Regulatory Bodies", "ЦБ, Минздрав, Росздравнадзор")
+
+' Событийные связи (стрелки показывают поток событий)
+Rel(Patients, Clinical, "PatientRegistered", "Kafka")
+Rel(Clinical, AI, "StudyRequested", "Kafka")
+Rel(AI, Clinical, "DiagnosisReady", "Kafka")
+Rel(Clinical, Finance, "ServiceProvided", "Kafka")
+Rel(Finance, Reporting, "TransactionCompleted", "Kafka")
+Rel(Patients, Reporting, "DemographicChanged", "Kafka")
+Rel(Pharma, Clinical, "DrugRecalled", "Kafka")
+Rel(Identity, Patients, "UserCreated", "Kafka")
+Rel(Identity, Finance, "UserOnboarded", "Kafka")
+Rel(Finance, Notification, "PaymentOverdue", "Kafka")
+Rel(Reporting, Regulator, "RegulatoryReportGenerated", "SFTP/Batch")
+
+@enduml
