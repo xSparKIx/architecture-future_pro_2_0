@@ -35,7 +35,7 @@
 | :--- | :--- | :--- |
 | Apache Kafka | Adopt | Центральная событийная шина. |
 | Debezium | Adopt | CDC-коннекторы для публикации событий из PostgreSQL. |
-| Apache Camel | Hold | Заменяется на Kafka-native интеграции, временно используется как мост. |
+| Apache Camel | Hold | Выводится из эксплуатации. Функции маршрутизации передаются в API Gateway + Istio, трансформации - в ACL + Kafka Connect, оркестрация и повторы (retry) - в Airflow/Dagster, валидация - в Schema Registry. |
 | Schema Registry (Confluent) | Adopt | Версионирование и контракты событий. |
 
 ## Витрина и BI

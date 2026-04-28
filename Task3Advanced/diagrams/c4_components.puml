@@ -86,6 +86,16 @@ Container_Boundary(legacy, "Legacy (временный)") {
     Component(legacy_dwh, "SQL Server DWH", "Чтение, отказ 18–36 мес.", "SQL Server 2008")
     Component(legacy_pb, "PowerBuilder UI", "Операторский интерфейс", "PB")
     Component(legacy_camel, "Camel ESB", "Старая шина (вывод из эксплуатации)", "Apache Camel")
+
+    'Сноска с информацией о распределении функций'
+    note left of legacy_camel
+    **Декомпозиция Camel ESB**
+    · Маршрутизация → API Gateway + Istio
+    · Трансформации → ACL + Kafka Connect
+    · Валидация → Schema Registry
+    · Оркестрация/повторы → Airflow/Dagster
+    · Бизнес-правила → подписки на события
+    end note
 }
 
 ' ========================
