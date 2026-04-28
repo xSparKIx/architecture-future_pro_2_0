@@ -1,0 +1,31 @@
+@startuml ''
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(analyst, "Аналитик", "Пользователь")
+
+System_Boundary(platform, "Ecosystem Future 2.0") {
+    Container(ingress, "API Gateway / Ingress (Istio/Nginx)", "Управление трафиком, аутентификация", "K8s")
+    Container(ssp, "Self-Service Portal (Front)", "React SPA", "Web App")
+    Container(dremio, "Query Engine (Trino/Dremio)", "Федеративные SQL-запросы поверх S3/Kafka", "Compute")
+    Container(kafka, "Event Bus (Apache Kafka)", "Near-Real-Time потоки доменных событий", "Messaging")
+    Container(s3, "Data Lakehouse (MinIO/Cloud S3)", "Iceberg Tables, Parquet", "Storage")
+    
+    ContainerDb(med_db, "Med DB (PostgreSQL)", "Транзакционные мед. данные (HIS)", "Ref. данные")
+    ContainerDb(fin_db, "Fin DB (PostgreSQL/CockroachDB)", "Банковские транзакции", "Core Banking")
+    ContainerDb(dwh_legacy, "Legacy SQL Server", "Только чтение, миграция", "Legacy")
+    
+    Container(catalog, "Data Catalog (DataHub/OpenMetadata)", "Схемы, лайнидж, качество", "Governance")
+}
+
+Rel(analyst, ssp, "Создает дашборд", "HTTPS")
+Rel(ssp, dremio, "JDBC/HTTP запрос", "SQL")
+Rel(dremio, s3, "Сканирует файлы", "S3 API")
+Rel(dremio, kafka, "Читает топики напрямую", "Kafka Topics")
+Rel(ingress, med_db, "Проксирует запросы мед. системы", "SQL/API")
+Rel(ingress, fin_db, "Проксирует платежи", "REST")
+Rel(med_db, kafka, "Публикует CDC события", "Debezium")
+Rel(fin_db, kafka, "Публикует CDC события", "Debezium")
+Rel(catalog, s3, "Сканирует метаданные", "API")
+Rel(catalog, kafka, "Регистрирует схемы", "Schema Registry")
+Rel(dwh_legacy, s3, "Batch выгрузка (Airflow)", "JDBC -> S3")
+@enduml

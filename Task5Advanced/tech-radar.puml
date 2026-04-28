@@ -1,0 +1,32 @@
+@startuml ''
+
+skinparam defaultFontSize 12
+left to right direction
+
+package "Techniques" {
+    [Event-Driven Architecture] as EDA #Green
+    [Data Mesh] as DMesh #Green
+    [Self-Service BI] as SSBI #Green
+    [CQRS/Event Sourcing] as CQRS #Yellow
+}
+
+package "Tools" {
+    [Apache Kafka] as Kafka #Green
+    [Debezium] as Debez #Green
+    [dbt] as dbt #Green
+    [Trino] as Trino #Green
+    [Cube.js] as Cube #Green
+    [Superset] as Super #Green
+    [dremio] as Dremio #Yellow
+}
+
+package "Platforms" {
+    [Kubernetes] as K8s #Green
+    [PostgreSQL] as PG #Green
+    [MinIO S3] as S3 #Green
+    [Apache Camel] as Camel #Red
+    [SQL Server 2008] as SQL08 #Red
+}
+
+EDA --> Kafka : publish/subscribe
+@enduml

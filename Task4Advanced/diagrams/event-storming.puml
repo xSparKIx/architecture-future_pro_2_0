@@ -1,0 +1,35 @@
+@startuml ''
+
+title Event Storming — поток ключевых событий между доменами
+
+' Участники (домены и подписчики)
+participant "Identity & Access" as IA
+participant "Patient Management" as PM
+participant "Clinical Services" as CL
+participant "AI Diagnostics" as AI
+participant "Pharma Partners" as PH
+participant "Financial Services" as FS
+participant "Reporting & BI" as RB
+participant "Notification Hub" as NH
+participant "DLQ" as DLQ
+
+' События и их последовательность (порядок условный)
+IA -> PM: UserCreated
+IA -> FS: UserOnboarded
+PM -> CL: PatientRegistered
+PM -> CL: ConsentChanged
+PM -> RB: DemographicUpdated
+CL -> AI: StudyRequested
+AI -> CL: DiagnosisReady
+AI -> DLQ: PredictionFailed (при ошибке)
+PH -> CL: DrugRecalled
+CL -> FS: ServiceProvided
+FS -> RB: TransactionCompleted
+FS -> NH: PaymentOverdue
+
+' Примечания
+note right of DLQ
+  Обработка несбойных
+  и ошибочных событий
+end note
+@enduml

@@ -1,0 +1,167 @@
+@startuml ''
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+LAYOUT_WITH_LEGEND()
+
+title Полная диаграмма компонентов целевой архитектуры «Будущее 2.0» (горизонт 3 года)
+
+' ========================
+' Внешние системы и пользователи
+' ========================
+Person(doctor, "Врач", "Приём пациентов, AI-ассистент")
+Person(analyst, "Аналитик", "Self‑Service отчёты")
+Person(operator, "Оператор", "Финансовые операции")
+System_Ext(pharma, "Фармкомпании", "Поставка данных")
+System_Ext(regulator, "Регуляторы", "Отчётность")
+
+' ========================
+' Инфраструктурный слой
+' ========================
+Container_Boundary(infra, "Platform Infrastructure") {
+    Component(istio, "Istio Service Mesh", "mTLS, трафик‑менеджмент", "Envoy")
+    Component(gateway, "API Gateway (Kong)", "Аутентификация, rate‑limit, роутинг", "Lua/Go")
+    Component(vault, "Vault", "Секреты и PKI", "HashiCorp Vault")
+    Component(monitoring, "Observability Stack", "Логи, метрики, трейсы", "Grafana, Prometheus, Loki, Tempo")
+    Component(ci_cd, "CI/CD (GitOps)", "Развёртывание и тесты", "ArgoCD, Tekton")
+}
+
+' ========================
+' Data Fabric / Mesh
+' ========================
+Container_Boundary(data_core, "Data Fabric Core") {
+    Component(kafka, "Kafka Cluster", "Event streaming, DLQ, schema registry", "Apache Kafka")
+    Component(s3, "Object Storage (S3)", "Iceberg / Parquet, data lakehouse", "MinIO / Ceph")
+    Component(dremio, "Dremio / Trino", "Федеративный SQL‑движок", "Java")
+    Component(catalog, "DataHub", "Data Catalog, lineage, quality", "OpenMetadata")
+    Component(etl, "Orchestrator", "Пакетная обработка и data pipelines", "Airflow / Dagster")
+    Component(acl_legacy, "ACL для Legacy", "Преобразование сообщений Camel ↔ JSON Schema", "Go")
+}
+
+' ========================
+' Self‑Service Portal (витрина)
+' ========================
+Container_Boundary(ssp, "Self‑Service Portal") {
+    Component(ssp_ui, "Web UI", "React SPA", "TypeScript")
+    Component(ssp_auth, "Auth & Security Layer", "Row/Column‑level security, маскирование", "Python")
+    Component(ssp_semantic, "Semantic Layer", "Бизнес‑метрики и кубы (Cube.js/dbt)", "Node.js / Python")
+    Component(ssp_bi, "Embedded BI", "Superset iframe", "Python")
+    Component(ssp_router, "Query Router", "Маршрутизация запросов: Dremio, Legacy, кэш", "Go")
+}
+
+' ========================
+' Медицинские сервисы (Новый контур)
+' ========================
+Container_Boundary(med, "Медицинские сервисы (Med)") {
+    Component(med_emr, "HIS / EMR", "Электронная медкарта, приёмы", "Java / Kotlin")
+    Component(med_img, "PACS Gateway", "Загрузка и хранение снимков DICOM", "Go")
+    Component(med_ai_gate, "AI Gateway", "Шлюз к AI‑фабрике для предиктов", "gRPC/Protobuf")
+    Component(med_db, "Med DB", "PostgreSQL с FHIR-схемой", "PostgreSQL")
+    Component(med_cdc, "CDC Source", "Debezium‑коннектор в Kafka", "Java")
+}
+
+' ========================
+' ФинТех сервисы
+' ========================
+Container_Boundary(fin, "ФинТех сервисы (FinTech)") {
+    Component(fin_core, "Core Banking", "Счета, проводки, кредиты", "Java / Golang")
+    Component(fin_risk, "Risk Engine", "Антифрод, скоринг", "Go")
+    Component(fin_billing, "Billing", "Выставление счетов клиникам", "Go")
+    Component(fin_db, "FinTech DB", "CockroachDB / PostgreSQL", "SQL")
+    Component(fin_cdc, "CDC Source", "Debezium‑коннектор в Kafka", "Java")
+}
+
+' ========================
+' AI‑фабрика
+' ========================
+Container_Boundary(ai, "AI‑фабрика") {
+    Component(ai_train, "ML Training Pipelines", "Тренировка моделей", "Python (Kubeflow)")
+    Component(ai_serving, "Model Serving", "Инференс через Triton / Seldon", "gRPC")
+    Component(ai_feature, "Feature Store", "Online/offline признаки", "Feast / Redis")
+    Component(ai_registry, "Model Registry", "Версионирование и approval", "MLflow")
+}
+
+' ========================
+' Легаси-контур (временный, на этапе миграции)
+' ========================
+Container_Boundary(legacy, "Legacy (временный)") {
+    Component(legacy_dwh, "SQL Server DWH", "Чтение, отказ 18–36 мес.", "SQL Server 2008")
+    Component(legacy_pb, "PowerBuilder UI", "Операторский интерфейс", "PB")
+    Component(legacy_camel, "Camel ESB", "Старая шина (вывод из эксплуатации)", "Apache Camel")
+
+    'Сноска с информацией о распределении функций'
+    note left of legacy_camel
+    **Декомпозиция Camel ESB**
+    · Маршрутизация → API Gateway + Istio
+    · Трансформации → ACL + Kafka Connect
+    · Валидация → Schema Registry
+    · Оркестрация/повторы → Airflow/Dagster
+    · Бизнес-правила → подписки на события
+    end note
+}
+
+' ========================
+' Связи
+' ========================
+' Пользователи → инфраструктура
+Rel(doctor, gateway, "HTTPS", "mTLS")
+Rel(analyst, gateway, "HTTPS", "mTLS")
+Rel(operator, gateway, "HTTPS", "mTLS")
+Rel(gateway, istio, "Envoy проксирует", "mTLS")
+Rel(istio, ssp_auth, "Запросы к SSP", "gRPC")
+Rel(istio, med_emr, "Запросы к мед. сервисам", "REST/gRPC")
+Rel(istio, fin_core, "Запросы к финтех", "REST/gRPC")
+Rel(istio, ai_serving, "Запросы на предикт", "gRPC")
+
+' Внутри SSP
+Rel(ssp_ui, ssp_auth, "API/токены", "HTTPS")
+Rel(ssp_auth, ssp_router, "Контекст запроса", "gRPC")
+Rel(ssp_router, dremio, "Федеративный SQL", "JDBC")
+Rel(ssp_router, legacy_dwh, "Прямой read‑only SQL (пока жив)", "JDBC")
+Rel(ssp_router, ssp_semantic, "Кэшированные кубы", "REST")
+Rel(ssp_semantic, dremio, "Строит витрины", "SQL")
+Rel(ssp_bi, ssp_semantic, "Готовый датасет", "REST")
+Rel(ssp_ui, ssp_bi, "Встраивает iframe", "HTTPS")
+
+' Медицина
+Rel(med_emr, med_db, "Транзакции", "SQL")
+Rel(med_emr, med_ai_gate, "Запрос предикта", "gRPC")
+Rel(med_img, s3, "Сохранение DICOM", "S3 API")
+Rel(med_ai_gate, ai_serving, "Вызов AI‑модели", "gRPC")
+Rel(med_db, med_cdc, "Logical replication", "WAL")
+Rel(med_cdc, kafka, "Публикация CDC‑событий", "Avro")
+
+' ФинТех
+Rel(fin_core, fin_db, "Транзакции", "SQL")
+Rel(fin_core, fin_risk, "Проверка фрода", "gRPC")
+Rel(fin_billing, fin_core, "Проводки счетов", "gRPC")
+Rel(fin_db, fin_cdc, "Logical replication", "WAL")
+Rel(fin_cdc, kafka, "Публикация CDC‑событий", "Avro")
+
+' AI‑фабрика
+Rel(ai_train, ai_feature, "Читает признаки", "Feast SDK")
+Rel(ai_train, s3, "Загружает датасеты", "S3")
+Rel(ai_train, ai_registry, "Регистрирует модель", "MLflow API")
+Rel(ai_serving, ai_feature, "Получает online‑признаки", "Feast SDK")
+Rel(ai_serving, s3, "Загружает артефакты", "S3")
+
+' Ядро данных
+Rel(kafka, acl_legacy, "Трансформация Camel‑событий", "Avro ↔ JSON Schema")
+Rel(acl_legacy, legacy_camel, "Мост к старой шине")
+Rel(etl, kafka, "Читает/пишет события", "Avro")
+Rel(etl, s3, "Материализует Iceberg‑таблицы", "S3 API")
+Rel(etl, legacy_dwh, "Выгрузка исторических данных (batch)", "JDBC")
+Rel(dremio, s3, "Сканирует Parquet", "S3 API")
+Rel(dremio, kafka, "Читает топики (streaming SQL)", "Kafka Topics")
+Rel(catalog, kafka, "Схемы и lineage", "Schema Registry API")
+Rel(catalog, s3, "Сканирует метаданные", "S3 API")
+Rel(monitoring, kafka, "Сбор метрик кластера", "JMX")
+Rel(ci_cd, vault, "Получает секреты для деплоя", "API")
+
+' Легаси (уходят)
+Rel(legacy_pb, legacy_dwh, "Прямые CRUD‑запросы (будет заменено)", "ODBC")
+Rel(legacy_camel, legacy_dwh, "Вызов хранимок (будет заменено)", "SQL")
+
+' Внешние стыковки
+Rel(pharma, kafka, "Публикация данных о препаратах", "Avro/Protobuf")
+Rel(ssp_semantic, regulator, "Автоматическая отчётность", "SFTP/CSV")
+
+@enduml
